@@ -48,10 +48,12 @@ def get_stock_data(ticker):
         start_date = end_date - dt.timedelta(days=45)  # Get extra days to ensure we have 30 trading days
         historical_data = stock.history(start=start_date, end=end_date)
 
+        if historical_data.empty:
+            raise ValueError(f"No historical data found for ticker '{ticker}'. Please check the ticker symbol.")
+
         return current_price, historical_data
     except Exception as e:
-        print(f"Error retrieving stock data: {e}")
-        sys.exit(1)
+        raise Exception(f"Error retrieving stock data: {str(e)}")
 
 
 def calculate_volatility(historical_data, trading_days=30):
@@ -163,7 +165,7 @@ def get_options_data(ticker, current_price, annual_volatility):
         expirations = stock.options
 
         if not expirations:
-            return None, None
+            raise ValueError(f"No options data available for ticker '{ticker}'.")
 
         # Choose an expiration date approximately 30-45 days out
         # This is a common timeframe for options trading (balances time decay and premium)
@@ -188,6 +190,9 @@ def get_options_data(ticker, current_price, annual_volatility):
         # Find the closest strike prices to our targets
         calls_df = options.calls
         puts_df = options.puts
+
+        if calls_df.empty or puts_df.empty:
+            raise ValueError(f"Insufficient options data for ticker '{ticker}'.")
 
         # Find closest call strike
         calls_df['strike_diff'] = abs(calls_df['strike'] - call_strike_target)
@@ -250,8 +255,7 @@ def get_options_data(ticker, current_price, annual_volatility):
         return call_option, put_option
 
     except Exception as e:
-        print(f"Error retrieving options data: {e}")
-        return None, None
+        raise Exception(f"Error retrieving options data: {str(e)}")
 
 
 def format_output(ticker, current_price, volatility, call_option, put_option, risk_free_rate):
@@ -333,35 +337,86 @@ def main():
     # Initialize Rich console for pretty output
     console = Console()
 
+    # Check if ticker was provided as command line argument
     parser = argparse.ArgumentParser(description="Stock Analysis CLI Tool")
-    parser.add_argument('ticker', type=str, help='Stock ticker symbol (e.g., AAPL)')
+    parser.add_argument('ticker', type=str, nargs='?', help='Stock ticker symbol (e.g., AAPL)')
 
     args = parser.parse_args()
-    ticker = args.ticker.upper()
+
+    # Interactive mode
+    if args.ticker:
+        # Single run mode if ticker was provided as argument
+        analyze_ticker(args.ticker, console)
+    else:
+        # Interactive shell mode
+        run_interactive_shell(console)
+
+
+def analyze_ticker(ticker, console):
+    """
+    Analyze a specific ticker and display results.
+
+    Args:
+        ticker (str): Stock ticker symbol
+        console (Console): Rich console object for output
+    """
+    ticker = ticker.upper()
 
     with console.status(f"[bold blue]Fetching data for {ticker}...", spinner="dots") as status:
-        # Get stock data
-        status.update(f"[bold blue]Retrieving current price for {ticker}...")
-        current_price, historical_data = get_stock_data(ticker)
+        try:
+            # Get stock data
+            status.update(f"[bold blue]Retrieving current price for {ticker}...")
+            current_price, historical_data = get_stock_data(ticker)
 
-        # Calculate volatility
-        status.update(f"[bold blue]Calculating volatility for {ticker}...")
-        volatility = calculate_volatility(historical_data)
+            # Calculate volatility
+            status.update(f"[bold blue]Calculating volatility for {ticker}...")
+            volatility = calculate_volatility(historical_data)
 
-        # Get risk-free rate
-        status.update(f"[bold blue]Retrieving risk-free rate...")
-        risk_free_rate = get_risk_free_rate()
+            # Get risk-free rate
+            status.update(f"[bold blue]Retrieving risk-free rate...")
+            risk_free_rate = get_risk_free_rate()
 
-        # Get options data
-        status.update(f"[bold blue]Analyzing options data for {ticker}...")
-        call_option, put_option = get_options_data(ticker, current_price, volatility)
+            # Get options data
+            status.update(f"[bold blue]Analyzing options data for {ticker}...")
+            call_option, put_option = get_options_data(ticker, current_price, volatility)
 
-        # Format results
-        status.update(f"[bold blue]Preparing analysis for {ticker}...")
-        output = format_output(ticker, current_price, volatility, call_option, put_option, risk_free_rate)
+            # Format results
+            status.update(f"[bold blue]Preparing analysis for {ticker}...")
+            output = format_output(ticker, current_price, volatility, call_option, put_option, risk_free_rate)
 
-    # Display final results
-    console.print(output)
+            # Display final results
+            console.print(output)
+            return True
+        except Exception as e:
+            console.print(f"[bold red]Error analyzing {ticker}: {str(e)}[/bold red]")
+            return False
+
+
+def run_interactive_shell(console):
+    """
+    Run an interactive shell that allows analyzing multiple tickers.
+
+    Args:
+        console (Console): Rich console object for output
+    """
+    console.print("[bold green]===== Stock Analyzer Interactive Shell =====[/bold green]")
+    console.print("Enter a ticker symbol to analyze or type 'exit' to quit.")
+
+    while True:
+        # Get user input
+        ticker = console.input("\n[bold cyan]Enter ticker symbol (or 'exit' to quit): [/bold cyan]")
+
+        # Check for exit command
+        if ticker.lower() in ['exit', 'quit', 'q', 'bye']:
+            console.print("[bold green]Exiting Stock Analyzer. Goodbye![/bold green]")
+            break
+
+        # Skip empty input
+        if not ticker.strip():
+            continue
+
+        # Analyze the ticker
+        analyze_ticker(ticker, console)
 
 
 if __name__ == "__main__":
