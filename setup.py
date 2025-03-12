@@ -9,6 +9,7 @@ setup(
         "pandas",
         "numpy",
         "scipy",
+        "rich",
     ],
     entry_points={
         "console_scripts": [
