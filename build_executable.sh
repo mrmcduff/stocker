@@ -53,10 +53,7 @@ then
 
     # Check if ~/bin is in PATH
     if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
-        echo "bad path bad path bad path!!!"
-        # echo "Adding ~/bin to PATH in .zshrc"
-        # echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-        # echo "Please run 'source ~/.zshrc' to update your PATH"
+        echo "update path to include ~/bin"
     fi
 fi
 

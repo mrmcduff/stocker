@@ -10,13 +10,14 @@ setup(
         "numpy",
         "scipy",
         "rich",
+        "prompt_toolkit",
     ],
     entry_points={
         "console_scripts": [
             "stockr=stockr.cli:main",
         ],
     },
-    author="Your Name",
+    author="Michael McDuffee",
     author_email="your.email@example.com",
     description="A command line tool for stock analysis",
     keywords="stocks, finance, options, analysis",
