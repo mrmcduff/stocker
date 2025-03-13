@@ -21,4 +21,11 @@ setup(
     description="A command line tool for stock analysis",
     keywords="stocks, finance, options, analysis",
     python_requires=">=3.6",
+    # In setup.py
+    extras_require={
+        "dev": [
+            "ruff",
+            "pytest",
+        ],
+    },
 )

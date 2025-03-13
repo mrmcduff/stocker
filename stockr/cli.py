@@ -42,20 +42,24 @@ def get_stock_data(ticker):
         stock = yf.Ticker(ticker)
 
         # Get company name
-        company_name = stock.info.get('shortName', stock.info.get('longName', ticker))
+        company_name = stock.info.get("shortName", stock.info.get("longName", ticker))
 
         # Get the current stock price (or most recent closing price)
-        current_price = stock.info.get('regularMarketPrice')
+        current_price = stock.info.get("regularMarketPrice")
         if current_price is None:
-            current_price = stock.history(period='1d')['Close'].iloc[-1]
+            current_price = stock.history(period="1d")["Close"].iloc[-1]
 
         # Get historical data - we need more than 30 days to account for non-trading days
         end_date = dt.datetime.now()
-        start_date = end_date - dt.timedelta(days=45)  # Get extra days to ensure we have 30 trading days
+        start_date = end_date - dt.timedelta(
+            days=45
+        )  # Get extra days to ensure we have 30 trading days
         historical_data = stock.history(start=start_date, end=end_date)
 
         if historical_data.empty:
-            raise ValueError(f"No historical data found for ticker '{ticker}'. Please check the ticker symbol.")
+            raise ValueError(
+                f"No historical data found for ticker '{ticker}'. Please check the ticker symbol."
+            )
 
         return current_price, company_name, historical_data
     except Exception as e:
@@ -75,11 +79,13 @@ def calculate_volatility(historical_data, trading_days=30):
     """
     # Ensure we have enough data
     if len(historical_data) < trading_days:
-        print(f"Warning: Only {len(historical_data)} trading days available, using all available data")
+        print(
+            f"Warning: Only {len(historical_data)} trading days available, using all available data"
+        )
         trading_days = len(historical_data)
 
     # Calculate daily returns
-    closing_prices = historical_data['Close'].tail(trading_days)
+    closing_prices = historical_data["Close"].tail(trading_days)
     daily_returns = closing_prices.pct_change().dropna()
 
     # Calculate standard deviation of daily returns
@@ -93,7 +99,7 @@ def calculate_volatility(historical_data, trading_days=30):
     return annualized_volatility * 100
 
 
-def black_scholes_merton(S, K, T, r, sigma, option_type='call'):
+def black_scholes_merton(S, K, T, r, sigma, option_type="call"):
     """
     Calculate option price using Black-Scholes-Merton model.
 
@@ -116,7 +122,7 @@ def black_scholes_merton(S, K, T, r, sigma, option_type='call'):
     d2 = d1 - sigma * math.sqrt(T)
 
     # Calculate option price
-    if option_type.lower() == 'call':
+    if option_type.lower() == "call":
         option_price = S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
     else:  # Put option
         option_price = K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
@@ -134,7 +140,7 @@ def get_risk_free_rate():
     try:
         # Use ^IRX ticker (13-week Treasury Bill) as a proxy for risk-free rate
         treasury = yf.Ticker("^IRX")
-        current_yield = treasury.info.get('regularMarketPrice')
+        current_yield = treasury.info.get("regularMarketPrice")
 
         # Convert from percentage to decimal
         if current_yield is not None:
@@ -180,7 +186,7 @@ def get_options_data(ticker, current_price, annual_volatility):
         selected_expiration = None
 
         for exp in expirations:
-            exp_date = dt.datetime.strptime(exp, '%Y-%m-%d').date()
+            exp_date = dt.datetime.strptime(exp, "%Y-%m-%d").date()
             days_to_expiration = (exp_date - today).days
             if days_to_expiration >= target_days:
                 selected_expiration = exp
@@ -201,15 +207,15 @@ def get_options_data(ticker, current_price, annual_volatility):
             raise ValueError(f"Insufficient options data for ticker '{ticker}'.")
 
         # Find closest call strike
-        calls_df['strike_diff'] = abs(calls_df['strike'] - call_strike_target)
-        closest_call = calls_df.loc[calls_df['strike_diff'].idxmin()]
+        calls_df["strike_diff"] = abs(calls_df["strike"] - call_strike_target)
+        closest_call = calls_df.loc[calls_df["strike_diff"].idxmin()]
 
         # Find closest put strike
-        puts_df['strike_diff'] = abs(puts_df['strike'] - put_strike_target)
-        closest_put = puts_df.loc[puts_df['strike_diff'].idxmin()]
+        puts_df["strike_diff"] = abs(puts_df["strike"] - put_strike_target)
+        closest_put = puts_df.loc[puts_df["strike_diff"].idxmin()]
 
         # Calculate days to expiration
-        exp_date = dt.datetime.strptime(selected_expiration, '%Y-%m-%d').date()
+        exp_date = dt.datetime.strptime(selected_expiration, "%Y-%m-%d").date()
         days_to_expiration = (exp_date - today).days
 
         # Get risk-free rate
@@ -221,41 +227,45 @@ def get_options_data(ticker, current_price, annual_volatility):
         # Calculate theoretical prices using Black-Scholes-Merton model
         bsm_call_price = black_scholes_merton(
             S=current_price,
-            K=closest_call['strike'],
+            K=closest_call["strike"],
             T=T,
             r=risk_free_rate,
             sigma=annual_volatility,
-            option_type='call'
+            option_type="call",
         )
 
         bsm_put_price = black_scholes_merton(
             S=current_price,
-            K=closest_put['strike'],
+            K=closest_put["strike"],
             T=T,
             r=risk_free_rate,
             sigma=annual_volatility,
-            option_type='put'
+            option_type="put",
         )
 
         # Create dictionaries with the relevant info
         call_option = {
-            'strike': closest_call['strike'],
-            'market_price': closest_call['lastPrice'],
-            'theoretical_price': bsm_call_price,
-            'price_difference': closest_call['lastPrice'] - bsm_call_price,
-            'implied_volatility': closest_call['impliedVolatility'] * 100 if 'impliedVolatility' in closest_call else None,
-            'expiration': selected_expiration,
-            'days_to_expiration': days_to_expiration
+            "strike": closest_call["strike"],
+            "market_price": closest_call["lastPrice"],
+            "theoretical_price": bsm_call_price,
+            "price_difference": closest_call["lastPrice"] - bsm_call_price,
+            "implied_volatility": closest_call["impliedVolatility"] * 100
+            if "impliedVolatility" in closest_call
+            else None,
+            "expiration": selected_expiration,
+            "days_to_expiration": days_to_expiration,
         }
 
         put_option = {
-            'strike': closest_put['strike'],
-            'market_price': closest_put['lastPrice'],
-            'theoretical_price': bsm_put_price,
-            'price_difference': closest_put['lastPrice'] - bsm_put_price,
-            'implied_volatility': closest_put['impliedVolatility'] * 100 if 'impliedVolatility' in closest_put else None,
-            'expiration': selected_expiration,
-            'days_to_expiration': days_to_expiration
+            "strike": closest_put["strike"],
+            "market_price": closest_put["lastPrice"],
+            "theoretical_price": bsm_put_price,
+            "price_difference": closest_put["lastPrice"] - bsm_put_price,
+            "implied_volatility": closest_put["impliedVolatility"] * 100
+            if "impliedVolatility" in closest_put
+            else None,
+            "expiration": selected_expiration,
+            "days_to_expiration": days_to_expiration,
         }
 
         return call_option, put_option
@@ -264,7 +274,15 @@ def get_options_data(ticker, current_price, annual_volatility):
         raise Exception(f"Error retrieving options data: {str(e)}")
 
 
-def format_output(ticker, company_name, current_price, volatility, call_option, put_option, risk_free_rate):
+def format_output(
+    ticker,
+    company_name,
+    current_price,
+    volatility,
+    call_option,
+    put_option,
+    risk_free_rate,
+):
     """
     Format the analysis results for display.
 
@@ -286,54 +304,88 @@ def format_output(ticker, company_name, current_price, volatility, call_option, 
     output.append(f"[bold yellow]{company_name}[/bold yellow]")
     output.append(f"\n[bold]Current Price:[/bold] ${current_price:.2f}")
     output.append(f"[bold]30-Day Trailing Volatility:[/bold] {volatility:.2f}%")
-    output.append(f"[bold]Risk-Free Rate:[/bold] {risk_free_rate*100:.2f}%")
+    output.append(f"[bold]Risk-Free Rate:[/bold] {risk_free_rate * 100:.2f}%")
 
     output.append("\n[bold cyan]--- Options Analysis ---[/bold cyan]")
     if call_option and put_option:
-        expiry = call_option['expiration']
-        days = call_option['days_to_expiration']
+        expiry = call_option["expiration"]
+        days = call_option["days_to_expiration"]
 
         output.append(f"[bold]Options Expiration:[/bold] {expiry} ({days} days)")
 
         # Call option details
-        call_pct = (call_option['strike']/current_price - 1)*100
-        output.append(f"\n[bold blue]Call Option[/bold blue] (Strike: ${call_option['strike']:.2f}, +{call_pct:.1f}%):")
-        output.append(f"  [bold]Market Price:[/bold] ${call_option['market_price']:.2f}")
-        output.append(f"  [bold]Theoretical Price (BSM):[/bold] ${call_option['theoretical_price']:.2f}")
+        call_pct = (call_option["strike"] / current_price - 1) * 100
+        output.append(
+            f"\n[bold blue]Call Option[/bold blue] (Strike: ${call_option['strike']:.2f}, +{call_pct:.1f}%):"
+        )
+        output.append(
+            f"  [bold]Market Price:[/bold] ${call_option['market_price']:.2f}"
+        )
+        output.append(
+            f"  [bold]Theoretical Price (BSM):[/bold] ${call_option['theoretical_price']:.2f}"
+        )
 
-        price_diff = call_option['price_difference']
-        price_diff_percent = (price_diff / call_option['theoretical_price']) * 100 if call_option['theoretical_price'] > 0 else 0
+        price_diff = call_option["price_difference"]
+        price_diff_percent = (
+            (price_diff / call_option["theoretical_price"]) * 100
+            if call_option["theoretical_price"] > 0
+            else 0
+        )
 
         if price_diff > 0:
-            output.append(f"  [bold green]Market Premium:[/bold green] ${price_diff:.2f} ({price_diff_percent:.1f}% above BSM)")
+            output.append(
+                f"  [bold green]Market Premium:[/bold green] ${price_diff:.2f} ({price_diff_percent:.1f}% above BSM)"
+            )
         else:
-            output.append(f"  [bold red]Market Discount:[/bold red] ${abs(price_diff):.2f} ({abs(price_diff_percent):.1f}% below BSM)")
+            output.append(
+                f"  [bold red]Market Discount:[/bold red] ${abs(price_diff):.2f} ({abs(price_diff_percent):.1f}% below BSM)"
+            )
 
-        if call_option['implied_volatility'] is not None:
-            output.append(f"  [bold]Implied Volatility:[/bold] {call_option['implied_volatility']:.2f}%")
-            vol_diff = call_option['implied_volatility'] - volatility
+        if call_option["implied_volatility"] is not None:
+            output.append(
+                f"  [bold]Implied Volatility:[/bold] {call_option['implied_volatility']:.2f}%"
+            )
+            vol_diff = call_option["implied_volatility"] - volatility
             vol_color = "green" if vol_diff >= 0 else "red"
-            output.append(f"  [bold]Volatility Difference:[/bold] [{vol_color}]{vol_diff:.2f}%[/{vol_color}]")
+            output.append(
+                f"  [bold]Volatility Difference:[/bold] [{vol_color}]{vol_diff:.2f}%[/{vol_color}]"
+            )
 
         # Put option details
-        put_pct = (put_option['strike']/current_price - 1)*100
-        output.append(f"\n[bold magenta]Put Option[/bold magenta] (Strike: ${put_option['strike']:.2f}, {put_pct:.1f}%):")
+        put_pct = (put_option["strike"] / current_price - 1) * 100
+        output.append(
+            f"\n[bold magenta]Put Option[/bold magenta] (Strike: ${put_option['strike']:.2f}, {put_pct:.1f}%):"
+        )
         output.append(f"  [bold]Market Price:[/bold] ${put_option['market_price']:.2f}")
-        output.append(f"  [bold]Theoretical Price (BSM):[/bold] ${put_option['theoretical_price']:.2f}")
+        output.append(
+            f"  [bold]Theoretical Price (BSM):[/bold] ${put_option['theoretical_price']:.2f}"
+        )
 
-        price_diff = put_option['price_difference']
-        price_diff_percent = (price_diff / put_option['theoretical_price']) * 100 if put_option['theoretical_price'] > 0 else 0
+        price_diff = put_option["price_difference"]
+        price_diff_percent = (
+            (price_diff / put_option["theoretical_price"]) * 100
+            if put_option["theoretical_price"] > 0
+            else 0
+        )
 
         if price_diff > 0:
-            output.append(f"  [bold green]Market Premium:[/bold green] ${price_diff:.2f} ({price_diff_percent:.1f}% above BSM)")
+            output.append(
+                f"  [bold green]Market Premium:[/bold green] ${price_diff:.2f} ({price_diff_percent:.1f}% above BSM)"
+            )
         else:
-            output.append(f"  [bold red]Market Discount:[/bold red] ${abs(price_diff):.2f} ({abs(price_diff_percent):.1f}% below BSM)")
+            output.append(
+                f"  [bold red]Market Discount:[/bold red] ${abs(price_diff):.2f} ({abs(price_diff_percent):.1f}% below BSM)"
+            )
 
-        if put_option['implied_volatility'] is not None:
-            output.append(f"  [bold]Implied Volatility:[/bold] {put_option['implied_volatility']:.2f}%")
-            vol_diff = put_option['implied_volatility'] - volatility
+        if put_option["implied_volatility"] is not None:
+            output.append(
+                f"  [bold]Implied Volatility:[/bold] {put_option['implied_volatility']:.2f}%"
+            )
+            vol_diff = put_option["implied_volatility"] - volatility
             vol_color = "green" if vol_diff >= 0 else "red"
-            output.append(f"  [bold]Volatility Difference:[/bold] [{vol_color}]{vol_diff:.2f}%[/{vol_color}]")
+            output.append(
+                f"  [bold]Volatility Difference:[/bold] [{vol_color}]{vol_diff:.2f}%[/{vol_color}]"
+            )
     else:
         output.append("[yellow]Options data not available for this ticker[/yellow]")
 
@@ -347,7 +399,9 @@ def main():
 
     # Check if ticker was provided as command line argument
     parser = argparse.ArgumentParser(description="Stock Analysis CLI Tool")
-    parser.add_argument('ticker', type=str, nargs='?', help='Stock ticker symbol (e.g., AAPL)')
+    parser.add_argument(
+        "ticker", type=str, nargs="?", help="Stock ticker symbol (e.g., AAPL)"
+    )
 
     args = parser.parse_args()
 
@@ -370,7 +424,9 @@ def analyze_ticker(ticker, console):
     """
     ticker = ticker.upper()
 
-    with console.status(f"[bold blue]Fetching data for {ticker}...", spinner="dots") as status:
+    with console.status(
+        f"[bold blue]Fetching data for {ticker}...", spinner="dots"
+    ) as status:
         try:
             # Get stock data
             status.update(f"[bold blue]Retrieving current price for {ticker}...")
@@ -386,11 +442,21 @@ def analyze_ticker(ticker, console):
 
             # Get options data
             status.update(f"[bold blue]Analyzing options data for {ticker}...")
-            call_option, put_option = get_options_data(ticker, current_price, volatility)
+            call_option, put_option = get_options_data(
+                ticker, current_price, volatility
+            )
 
             # Format results
             status.update(f"[bold blue]Preparing analysis for {ticker}...")
-            output = format_output(ticker, company_name, current_price, volatility, call_option, put_option, risk_free_rate)
+            output = format_output(
+                ticker,
+                company_name,
+                current_price,
+                volatility,
+                call_option,
+                put_option,
+                risk_free_rate,
+            )
 
             # Display final results
             console.print(output)
@@ -407,15 +473,19 @@ def run_interactive_shell(console):
     Args:
         console (Console): Rich console object for output
     """
-    console.print("[bold green]===== Stock Analyzer Interactive Shell =====[/bold green]")
+    console.print(
+        "[bold green]===== Stock Analyzer Interactive Shell =====[/bold green]"
+    )
     console.print("Enter a ticker symbol to analyze or type 'exit' to quit.")
 
     while True:
         # Get user input
-        ticker = console.input("\n[bold cyan]Enter ticker symbol (or 'exit' to quit): [/bold cyan]")
+        ticker = console.input(
+            "\n[bold cyan]Enter ticker symbol (or 'exit' to quit): [/bold cyan]"
+        )
 
         # Check for exit command
-        if ticker.lower() in ['exit', 'quit', 'q', 'bye']:
+        if ticker.lower() in ["exit", "quit", "q", "bye"]:
             console.print("[bold green]Exiting Stock Analyzer. Goodbye![/bold green]")
             break
 
