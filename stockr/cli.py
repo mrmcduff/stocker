@@ -9,8 +9,11 @@ This tool allows users to input a stock ticker and receive:
 4. Black-Scholes-Merton theoretical prices
 
 Usage:
-    stockr TICKER
+    stockr [TICKER]  # Interactive mode if no ticker provided
 """
+
+# Show a message while the rest of the imports load
+print("Loading dependencies...", flush=True)
 
 import argparse
 import sys
@@ -32,11 +35,14 @@ def get_stock_data(ticker):
         ticker (str): Stock ticker symbol (e.g., 'AAPL')
 
     Returns:
-        tuple: (current_price, historical_data)
+        tuple: (current_price, company_name, historical_data)
     """
     try:
         # Create a Ticker object
         stock = yf.Ticker(ticker)
+
+        # Get company name
+        company_name = stock.info.get('shortName', stock.info.get('longName', ticker))
 
         # Get the current stock price (or most recent closing price)
         current_price = stock.info.get('regularMarketPrice')
@@ -51,7 +57,7 @@ def get_stock_data(ticker):
         if historical_data.empty:
             raise ValueError(f"No historical data found for ticker '{ticker}'. Please check the ticker symbol.")
 
-        return current_price, historical_data
+        return current_price, company_name, historical_data
     except Exception as e:
         raise Exception(f"Error retrieving stock data: {str(e)}")
 
@@ -258,12 +264,13 @@ def get_options_data(ticker, current_price, annual_volatility):
         raise Exception(f"Error retrieving options data: {str(e)}")
 
 
-def format_output(ticker, current_price, volatility, call_option, put_option, risk_free_rate):
+def format_output(ticker, company_name, current_price, volatility, call_option, put_option, risk_free_rate):
     """
     Format the analysis results for display.
 
     Args:
         ticker (str): Stock ticker symbol
+        company_name (str): Company name
         current_price (float): Current stock price
         volatility (float): 30-day trailing volatility
         call_option (dict): Call option data
@@ -276,6 +283,7 @@ def format_output(ticker, current_price, volatility, call_option, put_option, ri
     # Rich markup for better formatting
     output = []
     output.append(f"\n[bold green]===== {ticker} Stock Analysis =====[/bold green]")
+    output.append(f"[bold yellow]{company_name}[/bold yellow]")
     output.append(f"\n[bold]Current Price:[/bold] ${current_price:.2f}")
     output.append(f"[bold]30-Day Trailing Volatility:[/bold] {volatility:.2f}%")
     output.append(f"[bold]Risk-Free Rate:[/bold] {risk_free_rate*100:.2f}%")
@@ -366,7 +374,7 @@ def analyze_ticker(ticker, console):
         try:
             # Get stock data
             status.update(f"[bold blue]Retrieving current price for {ticker}...")
-            current_price, historical_data = get_stock_data(ticker)
+            current_price, company_name, historical_data = get_stock_data(ticker)
 
             # Calculate volatility
             status.update(f"[bold blue]Calculating volatility for {ticker}...")
@@ -382,7 +390,7 @@ def analyze_ticker(ticker, console):
 
             # Format results
             status.update(f"[bold blue]Preparing analysis for {ticker}...")
-            output = format_output(ticker, current_price, volatility, call_option, put_option, risk_free_rate)
+            output = format_output(ticker, company_name, current_price, volatility, call_option, put_option, risk_free_rate)
 
             # Display final results
             console.print(output)

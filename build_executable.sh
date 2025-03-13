@@ -15,9 +15,25 @@ uv pip install pyinstaller
 echo "Creating launcher script..."
 cat > stockr_launcher.py << 'EOF'
 #!/usr/bin/env python
-from stockr.cli import main
+"""
+Launcher for the Stock Analyzer CLI tool.
+"""
+import sys
+import time
+
+def show_startup_message():
+    """Show a simple startup message while imports are loading."""
+    print("Starting Stock Analyzer...", flush=True)
+    print("Please wait while dependencies are loaded...", flush=True)
 
 if __name__ == "__main__":
+    # Show startup message first
+    show_startup_message()
+
+    # Import main function - this may take a moment
+    from stockr.cli import main
+
+    # Run the main function
     main()
 EOF
 
@@ -37,7 +53,7 @@ then
 
     # Check if ~/bin is in PATH
     if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
-        echo "Fix your PATH by adding ~/bin!"
+        echo "bad path bad path bad path!!!"
         # echo "Adding ~/bin to PATH in .zshrc"
         # echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
         # echo "Please run 'source ~/.zshrc' to update your PATH"
@@ -47,6 +63,6 @@ fi
 # Cleanup
 echo "Cleaning up build files..."
 deactivate
-rm -rf build-env build stockr.spec stockr_launcher.py
+rm -rf build stockr.spec stockr_launcher.py
 
 echo "Done!"
