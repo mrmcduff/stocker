@@ -38,7 +38,7 @@ if __name__ == "__main__":
 EOF
 
 echo "Building executable with PyInstaller..."
-pyinstaller --onefile --name stockr stockr_launcher.py
+pyinstaller --onefile --name stockr --clean stockr_launcher.py
 
 echo "Executable created at: $(pwd)/dist/stockr"
 

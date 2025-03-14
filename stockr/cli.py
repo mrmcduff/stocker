@@ -12,22 +12,19 @@ Usage:
     stockr [TICKER]  # Interactive mode if no ticker provided
 """
 
-# Show a message while the rest of the imports load
-print("Loading dependencies...", flush=True)
-
+# Start with only essential imports for startup
 import argparse
 import sys
-import math
-import datetime as dt
-from scipy.stats import norm
-import numpy as np
-import pandas as pd
-import yfinance as yf  # Yahoo Finance API wrapper
-from rich.console import Console
-from rich.spinner import Spinner
 from prompt_toolkit import prompt
 from prompt_toolkit.completion import Completer, Completion
 import re
+
+# Rich is smaller than pandas/numpy, so it's acceptable for startup
+from rich.console import Console
+from rich.spinner import Spinner
+
+# These heavy imports will be loaded only when needed
+# math, datetime, scipy.stats, numpy, pandas, yfinance
 
 
 def get_stock_data(ticker):
@@ -40,6 +37,11 @@ def get_stock_data(ticker):
     Returns:
         tuple: (current_price, company_name, historical_data)
     """
+    # Import dependencies only when needed
+    import datetime as dt
+    import pandas as pd
+    import yfinance as yf
+
     try:
         # Create a Ticker object
         stock = yf.Ticker(ticker)
@@ -76,6 +78,10 @@ def calculate_volatility(historical_data, trading_days=30):
     Returns:
         float: Annualized volatility as a percentage
     """
+    # Import dependencies only when needed
+    import math
+    import numpy as np
+
     # Ensure we have enough data
     if len(historical_data) < trading_days:
         print(f"Warning: Only {len(historical_data)} trading days available, using all available data")
@@ -111,6 +117,10 @@ def black_scholes_merton(S, K, T, r, sigma, option_type='call'):
     Returns:
         float: Option price
     """
+    # Import dependencies only when needed
+    import math
+    from scipy.stats import norm
+
     # Convert volatility from percentage to decimal
     sigma = sigma / 100
 
@@ -134,6 +144,9 @@ def get_risk_free_rate():
     Returns:
         float: Current risk-free rate as a decimal
     """
+    # Import dependencies only when needed
+    import yfinance as yf
+
     try:
         # Use ^IRX ticker (13-week Treasury Bill) as a proxy for risk-free rate
         treasury = yf.Ticker("^IRX")
@@ -163,6 +176,10 @@ def get_options_data(ticker, current_price, annual_volatility):
     Returns:
         tuple: (call_option, put_option) - Dictionary with options data
     """
+    # Import dependencies only when needed
+    import datetime as dt
+    import yfinance as yf
+
     try:
         stock = yf.Ticker(ticker)
 
@@ -371,6 +388,14 @@ def analyze_ticker(ticker, console):
         ticker (str): Stock ticker symbol
         console (Console): Rich console object for output
     """
+    # Import heavy dependencies only when needed
+    import math
+    import datetime as dt
+    from scipy.stats import norm
+    import numpy as np
+    import pandas as pd
+    import yfinance as yf
+
     ticker = ticker.upper()
 
     with console.status(f"[bold blue]Fetching data for {ticker}...", spinner="dots") as status:
