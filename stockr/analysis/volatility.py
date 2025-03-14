@@ -2,6 +2,7 @@
 Volatility calculation functions.
 """
 
+
 def calculate_volatility(historical_data, trading_days=30):
     """
     Calculate the trailing volatility based on the last N trading days.
@@ -19,11 +20,13 @@ def calculate_volatility(historical_data, trading_days=30):
 
     # Ensure we have enough data
     if len(historical_data) < trading_days:
-        print(f"Warning: Only {len(historical_data)} trading days available, using all available data")
+        print(
+            f"Warning: Only {len(historical_data)} trading days available, using all available data"
+        )
         trading_days = len(historical_data)
 
     # Calculate daily returns
-    closing_prices = historical_data['Close'].tail(trading_days)
+    closing_prices = historical_data["Close"].tail(trading_days)
     daily_returns = closing_prices.pct_change().dropna()
 
     # Calculate standard deviation of daily returns

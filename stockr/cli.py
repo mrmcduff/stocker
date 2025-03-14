@@ -28,8 +28,9 @@ from stockr.analysis import (
     get_stock_data,
     get_risk_free_rate,
     calculate_volatility,
-    get_options_data
+    get_options_data,
 )
+
 
 def analyze_ticker(ticker, console):
     """
@@ -41,7 +42,9 @@ def analyze_ticker(ticker, console):
     """
     ticker = ticker.upper()
 
-    with console.status(f"[bold blue]Fetching data for {ticker}...", spinner="dots") as status:
+    with console.status(
+        f"[bold blue]Fetching data for {ticker}...", spinner="dots"
+    ) as status:
         try:
             # Get stock data
             status.update(f"[bold blue]Retrieving current price for {ticker}...")
@@ -57,11 +60,21 @@ def analyze_ticker(ticker, console):
 
             # Get options data
             status.update(f"[bold blue]Analyzing options data for {ticker}...")
-            call_option, put_option = get_options_data(ticker, current_price, volatility)
+            call_option, put_option = get_options_data(
+                ticker, current_price, volatility
+            )
 
             # Format results
             status.update(f"[bold blue]Preparing analysis for {ticker}...")
-            output = format_output(ticker, company_name, current_price, volatility, call_option, put_option, risk_free_rate)
+            output = format_output(
+                ticker,
+                company_name,
+                current_price,
+                volatility,
+                call_option,
+                put_option,
+                risk_free_rate,
+            )
 
             # Display final results
             console.print(output)
@@ -78,7 +91,9 @@ def run_interactive_shell(console):
     Args:
         console (Console): Rich console object for output
     """
-    console.print("[bold green]===== Stock Analyzer Interactive Shell =====[/bold green]")
+    console.print(
+        "[bold green]===== Stock Analyzer Interactive Shell =====[/bold green]"
+    )
     console.print("Enter a ticker symbol to analyze or type 'exit' to quit.")
     console.print("Press [bold]Tab[/bold] to autocomplete ticker symbols.")
 
@@ -88,12 +103,16 @@ def run_interactive_shell(console):
     while True:
         try:
             # Get user input with tab completion
-            ticker = prompt("\nEnter ticker symbol (or 'exit' to quit): ",
-                          completer=ticker_completer)
+            ticker = prompt(
+                "\nEnter ticker symbol (or 'exit' to quit): ",
+                completer=ticker_completer,
+            )
 
             # Check for exit command
-            if ticker.lower() in ['exit', 'quit', 'q', 'bye']:
-                console.print("[bold green]Exiting Stock Analyzer. Goodbye![/bold green]")
+            if ticker.lower() in ["exit", "quit", "q", "bye"]:
+                console.print(
+                    "[bold green]Exiting Stock Analyzer. Goodbye![/bold green]"
+                )
                 break
 
             # Skip empty input
@@ -104,7 +123,9 @@ def run_interactive_shell(console):
             analyze_ticker(ticker, console)
         except (KeyboardInterrupt, EOFError):
             # Handle Ctrl+C and Ctrl+D gracefully
-            console.print("\n[bold yellow]Keyboard interrupt detected. Use 'exit' to quit.[/bold yellow]")
+            console.print(
+                "\n[bold yellow]Keyboard interrupt detected. Use 'exit' to quit.[/bold yellow]"
+            )
             continue
 
 
@@ -115,7 +136,9 @@ def main():
 
     # Check if ticker was provided as command line argument
     parser = argparse.ArgumentParser(description="Stock Analysis CLI Tool")
-    parser.add_argument('ticker', type=str, nargs='?', help='Stock ticker symbol (e.g., AAPL)')
+    parser.add_argument(
+        "ticker", type=str, nargs="?", help="Stock ticker symbol (e.g., AAPL)"
+    )
 
     args = parser.parse_args()
 

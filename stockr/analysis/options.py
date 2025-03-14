@@ -5,6 +5,7 @@ Options data retrieval and analysis.
 from stockr.analysis.data import get_risk_free_rate
 from stockr.models.black_scholes import black_scholes_merton
 
+
 def get_options_data(ticker, current_price, annual_volatility):
     """
     Get options pricing for strike prices 10% above and below the current price.
@@ -42,7 +43,7 @@ def get_options_data(ticker, current_price, annual_volatility):
         selected_expiration = None
 
         for exp in expirations:
-            exp_date = dt.datetime.strptime(exp, '%Y-%m-%d').date()
+            exp_date = dt.datetime.strptime(exp, "%Y-%m-%d").date()
             days_to_expiration = (exp_date - today).days
             if days_to_expiration >= target_days:
                 selected_expiration = exp
@@ -63,15 +64,15 @@ def get_options_data(ticker, current_price, annual_volatility):
             raise ValueError(f"Insufficient options data for ticker '{ticker}'.")
 
         # Find closest call strike
-        calls_df['strike_diff'] = abs(calls_df['strike'] - call_strike_target)
-        closest_call = calls_df.loc[calls_df['strike_diff'].idxmin()]
+        calls_df["strike_diff"] = abs(calls_df["strike"] - call_strike_target)
+        closest_call = calls_df.loc[calls_df["strike_diff"].idxmin()]
 
         # Find closest put strike
-        puts_df['strike_diff'] = abs(puts_df['strike'] - put_strike_target)
-        closest_put = puts_df.loc[puts_df['strike_diff'].idxmin()]
+        puts_df["strike_diff"] = abs(puts_df["strike"] - put_strike_target)
+        closest_put = puts_df.loc[puts_df["strike_diff"].idxmin()]
 
         # Calculate days to expiration
-        exp_date = dt.datetime.strptime(selected_expiration, '%Y-%m-%d').date()
+        exp_date = dt.datetime.strptime(selected_expiration, "%Y-%m-%d").date()
         days_to_expiration = (exp_date - today).days
 
         # Get risk-free rate
@@ -83,41 +84,45 @@ def get_options_data(ticker, current_price, annual_volatility):
         # Calculate theoretical prices using Black-Scholes-Merton model
         bsm_call_price = black_scholes_merton(
             S=current_price,
-            K=closest_call['strike'],
+            K=closest_call["strike"],
             T=T,
             r=risk_free_rate,
             sigma=annual_volatility,
-            option_type='call'
+            option_type="call",
         )
 
         bsm_put_price = black_scholes_merton(
             S=current_price,
-            K=closest_put['strike'],
+            K=closest_put["strike"],
             T=T,
             r=risk_free_rate,
             sigma=annual_volatility,
-            option_type='put'
+            option_type="put",
         )
 
         # Create dictionaries with the relevant info
         call_option = {
-            'strike': closest_call['strike'],
-            'market_price': closest_call['lastPrice'],
-            'theoretical_price': bsm_call_price,
-            'price_difference': closest_call['lastPrice'] - bsm_call_price,
-            'implied_volatility': closest_call['impliedVolatility'] * 100 if 'impliedVolatility' in closest_call else None,
-            'expiration': selected_expiration,
-            'days_to_expiration': days_to_expiration
+            "strike": closest_call["strike"],
+            "market_price": closest_call["lastPrice"],
+            "theoretical_price": bsm_call_price,
+            "price_difference": closest_call["lastPrice"] - bsm_call_price,
+            "implied_volatility": closest_call["impliedVolatility"] * 100
+            if "impliedVolatility" in closest_call
+            else None,
+            "expiration": selected_expiration,
+            "days_to_expiration": days_to_expiration,
         }
 
         put_option = {
-            'strike': closest_put['strike'],
-            'market_price': closest_put['lastPrice'],
-            'theoretical_price': bsm_put_price,
-            'price_difference': closest_put['lastPrice'] - bsm_put_price,
-            'implied_volatility': closest_put['impliedVolatility'] * 100 if 'impliedVolatility' in closest_put else None,
-            'expiration': selected_expiration,
-            'days_to_expiration': days_to_expiration
+            "strike": closest_put["strike"],
+            "market_price": closest_put["lastPrice"],
+            "theoretical_price": bsm_put_price,
+            "price_difference": closest_put["lastPrice"] - bsm_put_price,
+            "implied_volatility": closest_put["impliedVolatility"] * 100
+            if "impliedVolatility" in closest_put
+            else None,
+            "expiration": selected_expiration,
+            "days_to_expiration": days_to_expiration,
         }
 
         return call_option, put_option

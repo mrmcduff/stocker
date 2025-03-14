@@ -2,7 +2,8 @@
 Black-Scholes-Merton option pricing model.
 """
 
-def black_scholes_merton(S, K, T, r, sigma, option_type='call'):
+
+def black_scholes_merton(S, K, T, r, sigma, option_type="call"):
     """
     Calculate option price using Black-Scholes-Merton model.
 
@@ -29,7 +30,7 @@ def black_scholes_merton(S, K, T, r, sigma, option_type='call'):
     d2 = d1 - sigma * math.sqrt(T)
 
     # Calculate option price
-    if option_type.lower() == 'call':
+    if option_type.lower() == "call":
         option_price = S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
     else:  # Put option
         option_price = K * math.exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)

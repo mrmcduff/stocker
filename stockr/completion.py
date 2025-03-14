@@ -4,10 +4,12 @@ Tab completion functionality for the interactive shell.
 
 from prompt_toolkit.completion import Completer, Completion
 
+
 class TickerCompleter(Completer):
     """
     Completer for stock ticker symbols.
     """
+
     def __init__(self):
         # Common US stock tickers - this is a subset to keep things fast
         # Load the most popular/common tickers
@@ -110,7 +112,9 @@ class TickerCompleter(Completer):
 
         if not word:
             # Show a warning for empty input - would return too many options
-            yield Completion('', 0, display='Type at least one letter to see suggestions')
+            yield Completion(
+                "", 0, display="Type at least one letter to see suggestions"
+            )
             return
 
         # Find matching tickers
@@ -120,11 +124,15 @@ class TickerCompleter(Completer):
         many_results_threshold = 15
 
         if len(matches) > many_results_threshold:
-            yield Completion('', 0, display=f'Too many matches ({len(matches)}). Type more letters to narrow down.')
+            yield Completion(
+                "",
+                0,
+                display=f"Too many matches ({len(matches)}). Type more letters to narrow down.",
+            )
 
         # Sort matches alphabetically
         for ticker, company in sorted(matches):
             # Calculate how many characters user has already typed
             display = f"{ticker} - {company}"
             # Completion returns the remaining characters to complete the word
-            yield Completion(ticker[len(word):], display=display)
+            yield Completion(ticker[len(word) :], display=display)
