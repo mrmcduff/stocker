@@ -60,7 +60,7 @@ def analyze_ticker(ticker, console):
 
             # Get options data
             status.update(f"[bold blue]Analyzing options data for {ticker}...")
-            call_option, put_option = get_options_data(
+            call_option, put_option, errors = get_options_data(
                 ticker, current_price, volatility
             )
 
@@ -74,6 +74,7 @@ def analyze_ticker(ticker, console):
                 call_option,
                 put_option,
                 risk_free_rate,
+                errors
             )
 
             # Display final results
