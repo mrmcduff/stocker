@@ -7,7 +7,9 @@ making it suitable for modeling market crashes and unexpected movements.
 """
 
 
-def bates_simplified(S, K, T, r, sigma, lambda_param=1.0, mu_j=-0.02, sigma_j=0.05, option_type='call'):
+def bates_simplified(
+    S, K, T, r, sigma, lambda_param=1.0, mu_j=-0.02, sigma_j=0.05, option_type="call"
+):
     """
     Calculate option price using a simplified Bates jump diffusion model.
 
@@ -50,7 +52,9 @@ def bates_simplified(S, K, T, r, sigma, lambda_param=1.0, mu_j=-0.02, sigma_j=0.
     # Compute option price as a mixture of Black-Scholes prices
     for n in range(max_jumps):
         # Probability of exactly n jumps during time T
-        jump_prob = (lambda_param * T)**n * math.exp(-lambda_param * T) / math.factorial(n)
+        jump_prob = (
+            (lambda_param * T) ** n * math.exp(-lambda_param * T) / math.factorial(n)
+        )
 
         # Skip if probability is negligible
         if jump_prob < 1e-10:
@@ -63,10 +67,12 @@ def bates_simplified(S, K, T, r, sigma, lambda_param=1.0, mu_j=-0.02, sigma_j=0.
         adjusted_S = S * math.exp(n * mu_j)
 
         # Black-Scholes price with adjusted parameters
-        d1 = (math.log(adjusted_S / K) + (adjusted_drift + 0.5 * adjusted_sigma**2) * T) / (adjusted_sigma * math.sqrt(T))
+        d1 = (
+            math.log(adjusted_S / K) + (adjusted_drift + 0.5 * adjusted_sigma**2) * T
+        ) / (adjusted_sigma * math.sqrt(T))
         d2 = d1 - adjusted_sigma * math.sqrt(T)
 
-        if option_type.lower() == 'call':
+        if option_type.lower() == "call":
             bs_price = adjusted_S * norm.cdf(d1) - K * math.exp(-r * T) * norm.cdf(d2)
         else:  # Put option
             bs_price = K * math.exp(-r * T) * norm.cdf(-d2) - adjusted_S * norm.cdf(-d1)
@@ -77,7 +83,7 @@ def bates_simplified(S, K, T, r, sigma, lambda_param=1.0, mu_j=-0.02, sigma_j=0.
     return option_price
 
 
-def bates_approximation(S, K, T, r, sigma, option_type='call'):
+def bates_approximation(S, K, T, r, sigma, option_type="call"):
     """
     A simplified version of the Bates model with reasonable defaults.
 
@@ -108,5 +114,5 @@ def bates_approximation(S, K, T, r, sigma, option_type='call'):
         lambda_param=2.0,
         mu_j=-0.02,
         sigma_j=0.05,
-        option_type=option_type
+        option_type=option_type,
     )

@@ -28,5 +28,8 @@ setup(
             "ruff",
             "pytest",
         ],
+        "polygon": [
+            "requests",
+        ],
     },
 )

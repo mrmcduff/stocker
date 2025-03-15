@@ -2,7 +2,7 @@
 Options data retrieval and analysis.
 """
 
-from stockr.analysis.data import get_risk_free_rate
+from stockr.analysis.data import get_risk_free_rate, get_options_chain
 from stockr.models.black_scholes import black_scholes_merton
 from stockr.models.binomial import binomial_option_price
 from stockr.models.bates import bates_approximation
@@ -24,45 +24,21 @@ def get_options_data(ticker, current_price, annual_volatility):
     # Import dependencies only when needed
     import datetime as dt
     import numpy as np
-    import yfinance as yf
 
+    errors = []
     try:
-        stock = yf.Ticker(ticker)
-
-        errors = []
         # Calculate target strike prices (10% above and below)
         call_strike_target = current_price * 1.10
         put_strike_target = current_price * 0.90
 
-        # Get expiration dates
-        expirations = stock.options
+        # Get options data from the current provider
+        selected_expiration, calls_df, puts_df = get_options_chain(ticker)
 
-        if not expirations:
+        if not selected_expiration:
             raise ValueError(f"No options data available for ticker '{ticker}'.")
 
-        # Choose an expiration date approximately 30-45 days out
-        # This is a common timeframe for options trading (balances time decay and premium)
+        # Get expiration date
         today = dt.datetime.now().date()
-        target_days = 30
-        selected_expiration = None
-
-        for exp in expirations:
-            exp_date = dt.datetime.strptime(exp, "%Y-%m-%d").date()
-            days_to_expiration = (exp_date - today).days
-            if days_to_expiration >= target_days:
-                selected_expiration = exp
-                break
-
-        # If no expiration is at least 30 days out, take the furthest available
-        if selected_expiration is None and expirations:
-            selected_expiration = expirations[-1]
-
-        # Get the options chain for the selected expiration
-        options = stock.option_chain(selected_expiration)
-
-        # Find the closest strike prices to our targets
-        calls_df = options.calls
-        puts_df = options.puts
 
         if calls_df.empty or puts_df.empty:
             raise ValueError(f"Insufficient options data for ticker '{ticker}'.")
@@ -132,31 +108,39 @@ def get_options_data(ticker, current_price, annual_volatility):
         try:
             bates_call_price = bates_approximation(
                 S=current_price,
-                K=closest_call['strike'],
+                K=closest_call["strike"],
                 T=T,
                 r=risk_free_rate,
                 sigma=annual_volatility,  # Will be converted inside the function
-                option_type='call'
+                option_type="call",
             )
 
             bates_put_price = bates_approximation(
                 S=current_price,
-                K=closest_put['strike'],
+                K=closest_put["strike"],
                 T=T,
                 r=risk_free_rate,
                 sigma=annual_volatility,  # Will be converted inside the function
-                option_type='put'
+                option_type="put",
             )
 
             # Sanity check for Bates model results
             # If Bates price differs too much from BSM, fall back to BSM
-            if (abs(bates_call_price - bsm_call_price) > bsm_call_price) or not np.isfinite(bates_call_price):
+            if (
+                abs(bates_call_price - bsm_call_price) > bsm_call_price
+            ) or not np.isfinite(bates_call_price):
                 bates_call_price = bsm_call_price
-                errors.append(f"    Bates call price too far from BSM: {bates_call_price}")
+                errors.append(
+                    f"    Bates call price too far from BSM: {bates_call_price}"
+                )
 
-            if (abs(bates_put_price - bsm_put_price) > bsm_put_price) or not np.isfinite(bates_put_price):
+            if (
+                abs(bates_put_price - bsm_put_price) > bsm_put_price
+            ) or not np.isfinite(bates_put_price):
                 bates_put_price = bsm_put_price
-                errors.append(f"    Bates put price too far from BSM: {bates_put_price}")
+                errors.append(
+                    f"    Bates put price too far from BSM: {bates_put_price}"
+                )
 
         except Exception:
             # Bates model can sometimes fail, fallback to BSM
@@ -172,6 +156,7 @@ def get_options_data(ticker, current_price, annual_volatility):
             "price_difference": closest_call["lastPrice"] - bsm_call_price,
             "implied_volatility": closest_call["impliedVolatility"] * 100
             if "impliedVolatility" in closest_call
+            and closest_call["impliedVolatility"] is not None
             else None,
             "expiration": selected_expiration,
             "days_to_expiration": days_to_expiration,
@@ -187,6 +172,7 @@ def get_options_data(ticker, current_price, annual_volatility):
             "price_difference": closest_put["lastPrice"] - bsm_put_price,
             "implied_volatility": closest_put["impliedVolatility"] * 100
             if "impliedVolatility" in closest_put
+            and closest_put["impliedVolatility"] is not None
             else None,
             "expiration": selected_expiration,
             "days_to_expiration": days_to_expiration,

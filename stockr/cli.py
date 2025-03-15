@@ -74,7 +74,7 @@ def analyze_ticker(ticker, console):
                 call_option,
                 put_option,
                 risk_free_rate,
-                errors
+                errors,
             )
 
             # Display final results
@@ -97,6 +97,15 @@ def run_interactive_shell(console):
     )
     console.print("Enter a ticker symbol to analyze or type 'exit' to quit.")
     console.print("Press [bold]Tab[/bold] to autocomplete ticker symbols.")
+    console.print("\nAdditional commands:")
+    console.print("  [bold]provider[/bold] - Show current data provider")
+    console.print(
+        "  [bold]provider yfinance[/bold] - Switch to Yahoo Finance data provider"
+    )
+    console.print(
+        "  [bold]provider polygon API_KEY[/bold] - Switch to Polygon.io with API key"
+    )
+    console.print("  [bold]help[/bold] - Show available commands")
 
     # Create ticker completer for tab completion
     ticker_completer = TickerCompleter()
@@ -104,24 +113,86 @@ def run_interactive_shell(console):
     while True:
         try:
             # Get user input with tab completion
-            ticker = prompt(
-                "\nEnter ticker symbol (or 'exit' to quit): ",
+            user_input = prompt(
+                "\nEnter ticker symbol or command (or 'exit' to quit): ",
                 completer=ticker_completer,
             )
 
             # Check for exit command
-            if ticker.lower() in ["exit", "quit", "q", "bye"]:
+            if user_input.lower() in ["exit", "quit", "q", "bye"]:
                 console.print(
                     "[bold green]Exiting Stock Analyzer. Goodbye![/bold green]"
                 )
                 break
 
+            # Check for help command
+            if user_input.lower() == "help":
+                console.print("\n[bold cyan]Available Commands:[/bold cyan]")
+                console.print(
+                    "  [bold]<ticker>[/bold] - Analyze a stock ticker (e.g., AAPL)"
+                )
+                console.print("  [bold]provider[/bold] - Show current data provider")
+                console.print(
+                    "  [bold]provider yfinance[/bold] - Switch to Yahoo Finance data provider"
+                )
+                console.print(
+                    "  [bold]provider polygon API_KEY[/bold] - Switch to Polygon.io with API key"
+                )
+                console.print(
+                    "  [bold]exit[/bold], [bold]quit[/bold], [bold]q[/bold], [bold]bye[/bold] - Exit the program"
+                )
+                console.print("  [bold]help[/bold] - Show this help message")
+                continue
+
+            # Check for provider command
+            if user_input.lower().startswith("provider"):
+                parts = user_input.split()
+
+                # Just 'provider' - show current provider
+                if len(parts) == 1:
+                    from stockr.analysis.data_manager import get_default_provider
+
+                    provider = get_default_provider()
+                    provider_name = provider.__class__.__name__
+                    console.print(
+                        f"[bold cyan]Current data provider:[/bold cyan] {provider_name}"
+                    )
+                    continue
+
+                # provider with arguments
+                if len(parts) >= 2:
+                    provider_name = parts[1].lower()
+
+                    if provider_name == "yfinance":
+                        from stockr.analysis.data import set_default_provider
+
+                        set_default_provider("yfinance")
+                        console.print(
+                            f"[bold green]Switched to Yahoo Finance data provider[/bold green]"
+                        )
+                    elif provider_name == "polygon":
+                        api_key = parts[2] if len(parts) > 2 else None
+                        try:
+                            from stockr.analysis.data import set_default_provider
+
+                            set_default_provider("polygon", api_key=api_key)
+                            console.print(
+                                f"[bold green]Switched to Polygon.io data provider[/bold green]"
+                            )
+                        except ValueError as e:
+                            console.print(f"[bold red]Error: {str(e)}[/bold red]")
+                    else:
+                        console.print(
+                            f"[bold red]Unknown provider: {provider_name}. Choose 'yfinance' or 'polygon'.[/bold red]"
+                        )
+                    continue
+
             # Skip empty input
-            if not ticker.strip():
+            if not user_input.strip():
                 continue
 
             # Analyze the ticker
-            analyze_ticker(ticker, console)
+            analyze_ticker(user_input, console)
         except (KeyboardInterrupt, EOFError):
             # Handle Ctrl+C and Ctrl+D gracefully
             console.print(
