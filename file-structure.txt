@@ -1,0 +1,22 @@
+stockr/
+├── setup.py
+├── stockr/
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── formatters.py
+│   ├── completion.py
+│   ├── analysis/
+│   │   ├── __init__.py
+│   │   ├── data.py
+│   │   ├── data_manager.py
+│   │   ├── options.py
+│   │   └── providers/
+│   │       ├── __init__.py
+│   │       ├── base.py
+│   │       ├── yfinance_provider.py
+│   │       └── polygon_provider.py
+│   └── models/
+│       ├── __init__.py
+│       ├── black_scholes.py
+│       ├── binomial.py
+│       └── bates.py
