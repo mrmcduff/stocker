@@ -2,7 +2,7 @@
 Data manager for managing different data providers.
 """
 
-from stockr.analysis.data_providers import YFinanceProvider, PolygonProvider
+from stockr.analysis.providers import YFinanceProvider, PolygonProvider
 
 # Singleton to store the current data provider
 _current_provider = None
